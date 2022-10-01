@@ -16,7 +16,7 @@ class BotSendMessageException(Exception):
 
 
 class GetAPIAnswerException(Exception):
-    """Telegram bot send message exception."""
+    """Get API response exeption."""
 
     def __init__(self, *args):
         """Init method."""
