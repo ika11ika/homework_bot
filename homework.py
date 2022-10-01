@@ -35,8 +35,14 @@ def send_message(bot, message):
             chat_id=TELEGRAM_CHAT_ID,
             text=message,
         )
-    except telegram.error.TelegramError:
-        logging.error('Сообщение не отправлено')
+    except telegram.error.TelegramError as error:
+        """
+        Я вроде идею поняла и сделала, но у меня вопрос.
+        А какой смысл в данном случае создавать своё исключение,
+        если можно исключение Телеграмма отловить в main?
+        Просто, чтобы детальнее понимать, что именно полетело?
+        """
+        raise exceptions.BotSendMessageException(error)
     else:
         logging.info('Сообщение отправлено')
 
@@ -45,56 +51,67 @@ def get_api_answer(current_timestamp):
     """Запрос ответа от API."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    if homework_statuses.status_code != HTTPStatus.OK:
-        assert False
-        logging.error(f'Ошибка при запросе {homework_statuses.status_code}')
+    try:
+        homework_statuses = requests.get(
+            ENDPOINT,
+            headers=HEADERS,
+            params=params
+        )
+        error = f'Ошибка ответа API {homework_statuses.status_code}'
+        if homework_statuses.status_code != HTTPStatus.OK:
+            raise exceptions.GetAPIAnswerException(error)
+    except requests.ConnectionError:
+        raise exceptions.GetAPIAnswerException(error)
     return homework_statuses.json()
 
 
 def check_response(response):
     """Проверка ответа API на корректность."""
-    try:
+    if not response:
+        raise exceptions.EmptyResponseExeption('Ответ от API - пустой словарь')
+    if type(response) == list:
+        response = response[0]
+    if 'homeworks' in response:
         homeworks = response['homeworks']
-    except KeyError:
-        logging.error('В словаре нет ключа homeworks')
-    if not homeworks:
-        logging.error('В ответе API нет списка работ')
-        raise exceptions.APIResponseException()
-    if type(homeworks) != list:
-        logging.error('В ответе API работы представлены не списком')
-        raise exceptions.APIResponseException()
-    if homeworks == []:
-        logging.error('Работ не найдено')
-        raise exceptions.APIResponseException()
-    return homeworks
+        if type(homeworks) != list:
+            message = 'В ответе API работы представлены не списком'
+            raise exceptions.APIFormatResponseException(message)
+        if homeworks == []:
+            raise exceptions.APIFormatResponseException('Работ не найдено')
+        return homeworks
+    else:
+        message = "В ответе запроса API нет ключа 'homeworks'"
+        raise exceptions.APIFormatResponseException(message)
 
 
 def parse_status(homework):
     """Обработка статуса полученной домашки."""
     homework_name = homework['homework_name']
     homework_status = homework['status']
-    verdict = HOMEWORK_VERDICTS[homework_status]
+    try:
+        verdict = HOMEWORK_VERDICTS[homework_status]
+    except KeyError:
+        message = 'Нет вердикста для полученного статуса'
+        raise exceptions.NoVerdictForStatusException(message)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
     """Проверка, что токены найдены."""
-    return all(PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+    return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit("Не удалось загрузить данные токенов.")
-
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
-    response = get_api_answer(current_timestamp)
-    homeworks = check_response(response)
-    status = parse_status(homeworks[0])
-    while True:
-        try:
+    try:
+        bot = telegram.Bot(token=TELEGRAM_TOKEN)
+        current_timestamp = int(time.time())
+        response = get_api_answer(current_timestamp)
+        homeworks = check_response(response)
+        status = parse_status(homeworks[0])
+        while True:
             current_timestamp = int(time.time())
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
@@ -103,9 +120,18 @@ def main():
                 send_message(bot, message)
                 status = message
             time.sleep(RETRY_TIME)
-        except Exception as error:
-            logging.error(f'Сбой в работе программы: {error}')
-            time.sleep(RETRY_TIME)
+    except exceptions.GetAPIAnswerException as error:
+        logging.error(error.__str__)
+        time.sleep(RETRY_TIME)
+    except exceptions.EmptyResponseExeption as error:
+        logging.error(error.__str__)
+        time.sleep(RETRY_TIME)
+    except exceptions.APIResponseException as error:
+        logging.error(error.__str__)
+        time.sleep(RETRY_TIME)
+    except exceptions.NoVerdictForStatusException as error:
+        logging.error(error.__str__)
+        time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
