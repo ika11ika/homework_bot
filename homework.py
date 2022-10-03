@@ -36,12 +36,6 @@ def send_message(bot, message):
             text=message,
         )
     except telegram.error.TelegramError as error:
-        """
-        Я вроде идею поняла и сделала, но у меня вопрос.
-        А какой смысл в данном случае создавать своё исключение,
-        если можно исключение Телеграмма отловить в main?
-        Просто, чтобы детальнее понимать, что именно полетело?
-        """
         raise exceptions.BotSendMessageException(error)
     else:
         logging.info('Сообщение отправлено')
@@ -88,9 +82,9 @@ def parse_status(homework):
     """Обработка статуса полученной домашки."""
     homework_name = homework['homework_name']
     homework_status = homework['status']
-    try:
+    if homework_status in HOMEWORK_VERDICTS:
         verdict = HOMEWORK_VERDICTS[homework_status]
-    except KeyError:
+    else:
         message = 'Нет вердикста для полученного статуса'
         raise exceptions.NoVerdictForStatusException(message)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -120,16 +114,7 @@ def main():
                 send_message(bot, message)
                 status = message
             time.sleep(RETRY_TIME)
-    except exceptions.GetAPIAnswerException as error:
-        logging.error(error.__str__)
-        time.sleep(RETRY_TIME)
-    except exceptions.EmptyResponseExeption as error:
-        logging.error(error.__str__)
-        time.sleep(RETRY_TIME)
-    except exceptions.APIResponseException as error:
-        logging.error(error.__str__)
-        time.sleep(RETRY_TIME)
-    except exceptions.NoVerdictForStatusException as error:
+    except Exception as error:
         logging.error(error.__str__)
         time.sleep(RETRY_TIME)
 
