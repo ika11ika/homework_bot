@@ -44,7 +44,7 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp):
     """Запрос ответа от API."""
     timestamp = current_timestamp or int(time.time())
-    params = {'from_date': 0}
+    params = {'from_date': timestamp}
     try:
         homework_statuses = requests.get(
             ENDPOINT,
@@ -110,9 +110,9 @@ def main():
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             message = parse_status(homeworks[0])
-            #if (message != status):
-            send_message(bot, message)
-            status = message
+            if (message != status):
+                send_message(bot, message)
+                status = message
             time.sleep(RETRY_TIME)
     except Exception as error:
         logging.error(error.__str__)
