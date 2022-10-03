@@ -101,6 +101,7 @@ def main():
     if not check_tokens():
         sys.exit("Не удалось загрузить данные токенов.")
     try:
+        logging.info(TELEGRAM_TOKEN)
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
         current_timestamp = int(time.time())
         response = get_api_answer(current_timestamp)
