@@ -119,7 +119,7 @@ def main():
             logging.info("Очередная итерация цикла")
             time.sleep(RETRY_TIME)
     except Exception as error:
-        logging.error(error.__str__)
+        logging.error(error)
         time.sleep(RETRY_TIME)
 
 
