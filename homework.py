@@ -37,6 +37,7 @@ def send_message(bot, message):
         )
     except telegram.error.TelegramError as error:
         raise exceptions.BotSendMessageException(error)
+        logging.error(TELEGRAM_TOKEN)
     else:
         logging.info('Сообщение отправлено')
 
