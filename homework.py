@@ -71,8 +71,6 @@ def check_response(response):
         if type(homeworks) != list:
             message = 'В ответе API работы представлены не списком'
             raise exceptions.APIFormatResponseException(message)
-        if homeworks == []:
-            raise exceptions.APIFormatResponseException('Работ не найдено')
         return homeworks
     else:
         message = "В ответе запроса API нет ключа 'homeworks'"
