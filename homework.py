@@ -100,10 +100,11 @@ def main():
     """Основная логика работы бота."""
     if not check_tokens():
         sys.exit("Не удалось загрузить данные токенов.")
-    try:
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        message = ''
-        while True:
+
+    message = ''
+    while True:
+        try:
+            bot = telegram.Bot(token=TELEGRAM_TOKEN)
             current_timestamp = int(time.time())
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
@@ -115,9 +116,9 @@ def main():
 
             logging.info("Очередной запрос")
             time.sleep(RETRY_TIME)
-    except Exception as error:
-        logging.error(error)
-        time.sleep(RETRY_TIME)
+        except Exception as error:
+            logging.error(error)
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
