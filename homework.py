@@ -102,15 +102,17 @@ def main():
         sys.exit("Не удалось загрузить данные токенов.")
     try:
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        status = ''
+        message = ''
         while True:
             current_timestamp = int(time.time())
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-            message = parse_status(homeworks[0])
-            if (message != status):
-                send_message(bot, message)
-                status = message
+            status = parse_status(homeworks[0]) or 'Список работ пуст'
+
+            if (status != message):
+                send_message(bot, status)
+                message = status
+
             logging.info("Очередной запрос")
             time.sleep(RETRY_TIME)
     except Exception as error:
