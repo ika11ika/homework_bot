@@ -106,7 +106,6 @@ def main():
         response = get_api_answer(current_timestamp)
         homeworks = check_response(response)
         status = parse_status(homeworks[0])
-        logging.info("Первая итерация")
         while True:
             current_timestamp = int(time.time())
             response = get_api_answer(current_timestamp)
@@ -115,7 +114,7 @@ def main():
             if (message != status):
                 send_message(bot, message)
                 status = message
-            logging.info("Очередная итерация цикла")
+            logging.info("Очередной запрос")
             time.sleep(RETRY_TIME)
     except Exception as error:
         logging.error(error)
@@ -125,7 +124,7 @@ def main():
 if __name__ == '__main__':
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     )
 
